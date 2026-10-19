@@ -8,6 +8,7 @@ from uuid import UUID
 import pytest
 from fastapi.testclient import TestClient
 
+from resolveia.domain.tickets import Ticket
 from resolveia.infrastructure.repositories import InMemoryTicketRepository
 from resolveia.presentation.api.app import create_app
 
@@ -124,3 +125,59 @@ def test_rejects_unknown_field() -> None:
 
     assert response.status_code == 422
     assert repository.count == 0
+
+
+def test_gets_created_ticket_from_location_header() -> None:
+    with api_client() as (client, repository):
+        create_response = client.post("/api/v1/tickets", json=VALID_PAYLOAD)
+        get_response = client.get(create_response.headers["location"])
+
+    assert create_response.status_code == 201
+    assert get_response.status_code == 200
+    assert get_response.json() == create_response.json()
+    assert repository.count == 1
+
+
+def test_gets_ticket_without_product_version() -> None:
+    payload = {key: value for key, value in VALID_PAYLOAD.items() if key != "product_version"}
+
+    with api_client() as (client, repository):
+        create_response = client.post("/api/v1/tickets", json=payload)
+        get_response = client.get(create_response.headers["location"])
+
+    assert get_response.status_code == 200
+    assert get_response.json()["product_version"] is None
+    assert repository.count == 1
+
+
+def test_returns_not_found_for_unknown_ticket() -> None:
+    ticket_id = "df4771d9-33e9-4203-a267-cf3bcf0776d7"
+
+    with api_client() as (client, repository):
+        response = client.get(f"/api/v1/tickets/{ticket_id}")
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Ticket not found"}
+    assert repository.count == 0
+
+
+class TrackingTicketRepository(InMemoryTicketRepository):
+    """Record get calls to verify validation happens before the repository."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.get_calls = 0
+
+    async def get(self, ticket_id: UUID) -> Ticket | None:
+        self.get_calls += 1
+        return await super().get(ticket_id)
+
+
+def test_rejects_malformed_identifier_before_repository_call() -> None:
+    repository = TrackingTicketRepository()
+
+    with TestClient(create_app(repository)) as client:
+        response = client.get("/api/v1/tickets/not-a-uuid")
+
+    assert response.status_code == 422
+    assert repository.get_calls == 0

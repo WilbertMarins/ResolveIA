@@ -65,6 +65,14 @@ curl -X POST "http://127.0.0.1:8001/api/v1/tickets" \
 
 O endpoint retorna `201 Created`, um identificador UUID, o estado inicial `received` e o horário de criação em UTC. Os dados são mantidos somente na memória do processo e são perdidos ao reiniciar a aplicação.
 
+Use o valor retornado no cabeçalho `Location` para consultar o chamado no mesmo processo:
+
+```bash
+curl "http://127.0.0.1:8001/api/v1/tickets/550e8400-e29b-41d4-a716-446655440000"
+```
+
+A consulta retorna `200 OK` para um chamado existente, `404 Not Found` para um UUID não armazenado e `422 Unprocessable Entity` para um identificador malformado.
+
 ## Estrutura inicial
 
 ```text

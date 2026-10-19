@@ -24,3 +24,11 @@ def test_stores_ticket_by_identifier() -> None:
 
     assert repository.count == 1
     assert asyncio.run(repository.get(ticket.id)) == ticket
+
+
+def test_returns_none_when_ticket_does_not_exist() -> None:
+    repository = InMemoryTicketRepository()
+    missing_id = UUID("df4771d9-33e9-4203-a267-cf3bcf0776d7")
+
+    assert asyncio.run(repository.get(missing_id)) is None
+    assert repository.count == 0
