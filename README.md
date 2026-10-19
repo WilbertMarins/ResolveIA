@@ -2,7 +2,7 @@
 
 O ResolveIA é uma plataforma multiagente de suporte técnico para uma API fictícia de pagamentos. O sistema será capaz de triar chamados, buscar evidências, propor resoluções fundamentadas e encaminhar casos sensíveis ou incertos para revisão humana.
 
-O projeto é desenvolvido como portfólio técnico usando Specification-Driven Development (SDD). A fundação atual contém apenas estrutura, qualidade e documentação do processo; funcionalidades de negócio serão introduzidas por specs posteriores.
+O projeto é desenvolvido como portfólio técnico usando Specification-Driven Development (SDD). O primeiro fluxo funcional permite cadastrar chamados por uma API HTTP; a persistência ainda é volátil e será substituída em um incremento posterior.
 
 ## Princípios
 
@@ -39,6 +39,31 @@ uv run pytest
 ```
 
 Esses comandos são executados automaticamente pela CI em pushes para `main` e em pull requests.
+
+## Executando a API
+
+Inicie o servidor de desenvolvimento:
+
+```bash
+uv run uvicorn resolveia.presentation.api.app:app --reload --port 8001
+```
+
+A documentação interativa estará disponível em `http://127.0.0.1:8001/docs`.
+
+Cadastre um chamado sintético:
+
+```bash
+curl -X POST "http://127.0.0.1:8001/api/v1/tickets" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Webhook de pagamento não recebido",
+    "description": "O pagamento foi confirmado, mas nosso endpoint não recebeu o webhook.",
+    "product": "Payments API",
+    "product_version": "v2"
+  }'
+```
+
+O endpoint retorna `201 Created`, um identificador UUID, o estado inicial `received` e o horário de criação em UTC. Os dados são mantidos somente na memória do processo e são perdidos ao reiniciar a aplicação.
 
 ## Estrutura inicial
 

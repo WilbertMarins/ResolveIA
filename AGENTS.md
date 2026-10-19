@@ -23,7 +23,7 @@ ResolveIA é uma plataforma multiagente de suporte técnico para uma API fictíc
 6. Aguardar o responsável executar as verificações e comunicar os resultados.
 7. Corrigir falhas relatadas e repetir a validação manual quando necessário.
 8. Criar ou atualizar o material de estudo local em `study/`.
-9. Conduzir a revisão didática.
+9. Disponibilizar o material para estudo independente do responsável, sem bloquear o fluxo.
 10. Criar um único commit após a confirmação das verificações.
 
 Não execute testes, lint, formatação ou checagem de tipos. O responsável do projeto executará essas verificações manualmente para controlar o consumo de tokens.
@@ -81,3 +81,4 @@ Não execute testes, lint, formatação ou checagem de tipos. O responsável do 
 - Registre decisões arquiteturais relevantes em ADRs quando a spec exigir.
 - Para cada spec, produza material local em português contendo conceitos, decisões, alternativas, perguntas de revisão, exercício e reflexão pós-implementação.
 - Use inglês nos exemplos de código apresentados no material de estudo.
+- Não aguarde a leitura ou as respostas do material para criar o commit ou propor a próxima spec; o responsável conduz os estudos no próprio ritmo.

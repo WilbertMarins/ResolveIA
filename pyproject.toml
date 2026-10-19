@@ -8,10 +8,15 @@ version = "0.1.0"
 description = "Multi-agent technical support platform for a fictional payment API"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "fastapi>=0.147,<1",
+    "pydantic>=2.12,<3",
+    "uvicorn>=0.53,<1",
+]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1,<1",
     "mypy>=1.18,<2",
     "pytest>=8.4,<10",
     "ruff>=0.14,<1",

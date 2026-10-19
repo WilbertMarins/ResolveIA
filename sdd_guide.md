@@ -35,7 +35,7 @@ O identificador deve aparecer na mensagem do commit, mesmo que a spec preenchida
 | Aprovada | Escopo autorizado para implementação |
 | Implementada | Alterações prontas para verificação manual |
 | Verificada | Responsável confirmou os critérios de aceite |
-| Concluída | Revisão didática realizada e commit criado |
+| Concluída | Material disponibilizado e commit criado |
 
 Se uma mudança material for necessária durante a implementação, a spec volta para Proposta e precisa de nova aprovação.
 
@@ -77,13 +77,14 @@ Se uma mudança material for necessária durante a implementação, a spec volta
 - Falhas são corrigidas antes de avançar.
 - O agente não executa esses comandos, conforme decisão do projeto.
 
-### 6. Estudo e revisão
+### 6. Material de estudo
 
 - Criar `study/SPEC-NNN-<slug>.md` em português.
 - Explicar os conceitos e as decisões aplicadas.
 - Manter todos os exemplos de código em inglês.
 - Incluir perguntas, exercício prático e reflexão pós-implementação.
-- Conduzir uma revisão didática após a verificação.
+- Disponibilizar o material sem aguardar leitura, respostas ou revisão didática.
+- O responsável conduz os estudos no próprio ritmo; essa atividade não bloqueia commit ou spec seguinte.
 
 ### 7. Commit
 
@@ -117,7 +118,7 @@ Uma spec só pode ser concluída quando:
 - o responsável executou e confirmou as verificações;
 - documentação e contratos afetados foram atualizados;
 - o material de estudo local foi produzido;
-- a revisão didática foi realizada;
+- o material de estudo local foi disponibilizado para estudo independente;
 - nenhuma alteração fora do escopo entrou no diff;
 - um único commit foi criado com o identificador correto.
 

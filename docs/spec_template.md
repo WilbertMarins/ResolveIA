@@ -132,7 +132,7 @@ O texto deve estar em português e os exemplos de código em inglês.
 
 - Todos os critérios de aceite foram confirmados pelo responsável.
 - Testes, documentação e material de estudo foram produzidos.
-- A revisão didática foi realizada.
+- O material foi disponibilizado sem bloquear o fluxo de entrega.
 - O commit único contém `[SPEC-NNN]`.
 
 ## Mensagem de commit proposta
