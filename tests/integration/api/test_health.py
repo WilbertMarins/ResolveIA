@@ -39,8 +39,13 @@ def test_liveness_does_not_check_dependencies() -> None:
 
 
 def test_readiness_reports_available_database() -> None:
-    check = FakeReadinessCheck(available=True)
-    api = create_app(repository=InMemoryTicketRepository(), readiness_check=check)
+    database_check = FakeReadinessCheck(available=True)
+    storage_check = FakeReadinessCheck(available=True)
+    api = create_app(
+        repository=InMemoryTicketRepository(),
+        readiness_check=database_check,
+        object_storage_readiness_check=storage_check,
+    )
 
     with TestClient(api) as client:
         response = client.get("/health/ready")
@@ -48,9 +53,13 @@ def test_readiness_reports_available_database() -> None:
     assert response.status_code == 200
     assert response.json() == {
         "status": "ready",
-        "checks": {"database": "available"},
+        "checks": {
+            "database": "available",
+            "object_storage": "available",
+        },
     }
-    assert check.calls == 1
+    assert database_check.calls == 1
+    assert storage_check.calls == 1
 
 
 def test_readiness_reports_unavailable_database_without_details() -> None:
@@ -63,8 +72,35 @@ def test_readiness_reports_unavailable_database_without_details() -> None:
     assert response.status_code == 503
     assert response.json() == {
         "status": "not_ready",
-        "checks": {"database": "unavailable"},
+        "checks": {
+            "database": "unavailable",
+            "object_storage": "available",
+        },
     }
     assert "postgresql" not in response.text
     assert "secret" not in response.text
     assert check.calls == 1
+
+
+def test_readiness_reports_unavailable_object_storage_without_details() -> None:
+    database_check = FakeReadinessCheck(available=True)
+    storage_check = FakeReadinessCheck(available=False)
+    api = create_app(
+        repository=InMemoryTicketRepository(),
+        readiness_check=database_check,
+        object_storage_readiness_check=storage_check,
+    )
+
+    with TestClient(api) as client:
+        response = client.get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "status": "not_ready",
+        "checks": {
+            "database": "available",
+            "object_storage": "unavailable",
+        },
+    }
+    assert "bucket" not in response.text
+    assert "secret" not in response.text

@@ -15,6 +15,7 @@ class ReadinessChecks(BaseModel):
     """Public status of required dependencies."""
 
     database: Literal["available", "unavailable"]
+    object_storage: Literal["available", "unavailable"]
 
 
 class ReadinessResponse(BaseModel):
