@@ -12,9 +12,14 @@ jobs:
   quality:
     name: Quality
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       DATABASE_URL: postgresql+asyncpg://resolveia:resolveia_ci@127.0.0.1:5433/resolveia
+      OBJECT_STORAGE_ENDPOINT_URL: http://127.0.0.1:8333
+      OBJECT_STORAGE_ACCESS_KEY: resolveia_ci
+      OBJECT_STORAGE_SECRET_KEY: resolveia_ci_secret
+      OBJECT_STORAGE_BUCKET: resolveia-knowledge
+      OBJECT_STORAGE_REGION: us-east-1
 
     services:
       postgres:
@@ -49,11 +54,32 @@ jobs:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
 
+      - name: Start SeaweedFS
+        run: >-
+          docker run --detach --name resolveia-seaweedfs
+          --publish 8333:8333 --publish 9333:9333
+          chrislusf/seaweedfs:4.46
+          server -dir=/data -s3 -s3.port=8333 -ip.bind=0.0.0.0
+
+      - name: Wait for SeaweedFS
+        run: |
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:9333/cluster/healthz > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          docker logs resolveia-seaweedfs
+          exit 1
+
       - name: Install dependencies
         run: uv sync --frozen --dev
 
       - name: Apply database migrations
         run: uv run --frozen alembic upgrade head
+
+      - name: Initialize object storage
+        run: uv run --frozen python -m resolveia.infrastructure.storage.bootstrap
 
       - name: Run lint
         run: uv run --frozen ruff check .

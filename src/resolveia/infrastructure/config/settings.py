@@ -18,6 +18,13 @@ class Settings(BaseSettings):
 
     database_url: SecretStr
     database_health_timeout_seconds: Annotated[float, Field(gt=0)] = 2.0
+    object_storage_endpoint_url: str
+    object_storage_access_key: SecretStr
+    object_storage_secret_key: SecretStr
+    object_storage_bucket: str
+    object_storage_region: str = "us-east-1"
+    object_storage_health_timeout_seconds: Annotated[float, Field(gt=0)] = 2.0
+    object_storage_operation_timeout_seconds: Annotated[float, Field(gt=0)] = 10.0
 
 
 @lru_cache
