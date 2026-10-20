@@ -90,8 +90,11 @@ Se uma mudança material for necessária durante a implementação, a spec volta
 
 - Revisar o diff e excluir artefatos fora do escopo.
 - Confirmar que arquivos locais continuam ignorados.
-- Criar exatamente um commit por spec.
-- Usar Conventional Commits em inglês e anexar `[SPEC-NNN]`.
+- Criar os commits coesos necessários para tornar a revisão humana simples.
+- Buscar até 700 linhas adicionadas e removidas por commit e não ultrapassar 1.000
+  linhas sem aprovação explícita.
+- Usar Conventional Commits em inglês e anexar `[SPEC-NNN]` a todos os commits da
+  implementação.
 - O responsável inspeciona o commit e realiza o push.
 
 ## Critérios de qualidade de uma spec
@@ -106,7 +109,7 @@ Uma spec está pronta para aprovação quando:
 - os critérios descrevem resultados observáveis, não detalhes acidentais;
 - a estratégia de testes contempla fluxos principal, alternativos e falhas relevantes;
 - riscos e decisões pendentes estão registrados;
-- o incremento é pequeno o suficiente para um único commit coerente.
+- o incremento pode ser dividido em commits coerentes dentro dos limites de tamanho.
 
 ## Definition of Done
 
@@ -120,7 +123,9 @@ Uma spec só pode ser concluída quando:
 - o material de estudo local foi produzido;
 - o material de estudo local foi disponibilizado para estudo independente;
 - nenhuma alteração fora do escopo entrou no diff;
-- um único commit foi criado com o identificador correto.
+- todos os commits foram criados com o identificador correto;
+- cada commit contém preferencialmente até 700 linhas alteradas e, salvo aprovação
+  explícita, no máximo 1.000 linhas adicionadas e removidas.
 
 ## Mudanças após a aprovação
 
@@ -134,6 +139,6 @@ Como as specs preenchidas não são publicadas, a rastreabilidade permanente dep
 - testes que expressem os critérios de aceite;
 - documentação pública atualizada;
 - ADRs para decisões arquiteturais duradouras;
-- commits pequenos e limitados a um único incremento.
+- commits pequenos, coesos e limitados a um único incremento.
 
 Essa escolha reduz a evidência pública do processo SDD. Por isso, mensagens de commit e testes devem ser especialmente claros.

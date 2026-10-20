@@ -24,15 +24,19 @@ ResolveIA é uma plataforma multiagente de suporte técnico para uma API fictíc
 7. Corrigir falhas relatadas e repetir a validação manual quando necessário.
 8. Criar ou atualizar o material de estudo local em `study/`.
 9. Disponibilizar o material para estudo independente do responsável, sem bloquear o fluxo.
-10. Criar um único commit após a confirmação das verificações.
+10. Criar commits pequenos e coesos após a confirmação das verificações.
 
 Não execute testes, lint, formatação ou checagem de tipos. O responsável do projeto executará essas verificações manualmente para controlar o consumo de tokens.
 
 ## Commits
 
-- Produza exatamente um commit por spec.
+- Uma spec pode gerar múltiplos commits quando isso facilitar a revisão humana.
+- Cada commit deve representar uma unidade coesa e manter a spec rastreável.
+- Busque até 700 linhas adicionadas e removidas por commit e nunca ultrapasse 1.000
+  linhas sem aprovação explícita do responsável.
 - Use Conventional Commits em inglês.
-- Inclua o identificador da spec no final da primeira linha.
+- Inclua o identificador da spec no final da primeira linha de todos os commits da
+  implementação.
 - Não crie o commit antes da aprovação da spec e da confirmação das verificações.
 - Não inclua specs preenchidas, material de estudo ou o arquivo `resolveia-referencia.md` no commit.
 - Exemplo: `feat(tickets): create ticket endpoint [SPEC-001]`.

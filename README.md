@@ -2,7 +2,7 @@
 
 O ResolveIA é uma plataforma multiagente de suporte técnico para uma API fictícia de pagamentos. O sistema será capaz de triar chamados, buscar evidências, propor resoluções fundamentadas e encaminhar casos sensíveis ou incertos para revisão humana.
 
-O projeto é desenvolvido como portfólio técnico usando Specification-Driven Development (SDD). O fluxo atual permite cadastrar e consultar chamados por uma API HTTP com persistência em PostgreSQL.
+O projeto é desenvolvido como portfólio técnico usando Specification-Driven Development (SDD). O fluxo atual permite cadastrar e consultar chamados e receber documentos técnicos para a base de conhecimento, com metadados no PostgreSQL e arquivos originais no SeaweedFS.
 
 ## Princípios
 
@@ -30,15 +30,16 @@ uv sync --dev
 
 O `uv` cria e gerencia o ambiente virtual automaticamente. Não é necessário ativá-lo para executar os comandos abaixo.
 
-Crie a configuração local, inicie o PostgreSQL na porta `5433` e aplique as migrações:
+Crie a configuração local, inicie o PostgreSQL na porta `5433` e o endpoint S3 do SeaweedFS na porta `8333`, aplique as migrações e crie o bucket local:
 
 ```powershell
 Copy-Item .env.example .env
-docker compose up -d postgres
+docker compose up -d postgres seaweedfs
 uv run alembic upgrade head
+uv run python -m resolveia.infrastructure.storage.bootstrap
 ```
 
-O volume `resolveia_postgres_data` preserva os dados quando o container ou a API é reiniciado. A aplicação não cria tabelas automaticamente; o Alembic é a fonte de verdade do schema.
+Os volumes `resolveia_postgres_data` e `resolveia_seaweedfs_data` preservam os dados quando os containers ou a API são reiniciados. A aplicação não cria tabelas nem buckets automaticamente: o Alembic é a fonte de verdade do schema e o comando de bootstrap prepara explicitamente o bucket de desenvolvimento.
 
 ## Verificações de qualidade
 
@@ -84,6 +85,23 @@ curl "http://127.0.0.1:8001/api/v1/tickets/550e8400-e29b-41d4-a716-446655440000"
 
 A consulta retorna `200 OK` para um chamado existente, `404 Not Found` para um UUID não armazenado e `422 Unprocessable Entity` para um identificador malformado.
 
+## Base de conhecimento
+
+Envie um documento técnico sintético em Markdown, texto UTF-8 ou PDF:
+
+```bash
+curl -X POST "http://127.0.0.1:8001/api/v1/knowledge/documents" \
+  -F "file=@payments-api.md;type=text/markdown" \
+  -F "product=payments-api" \
+  -F "product_version=2.4" \
+  -F "document_version=2026.10" \
+  -F "document_type=runbook" \
+  -F "language=pt-BR" \
+  -F "valid_until=2027-10-31"
+```
+
+O arquivo pode ter no máximo 10 MiB. A API valida extensão, tipo declarado e conteúdo mínimo, calcula o SHA-256, armazena o original no bucket configurado e retorna `201 Created` com o estado `pending_ingestion`. A chave interna e o bucket não são expostos no contrato HTTP. Extração, chunks e embeddings ainda não fazem parte deste incremento.
+
 ## Health checks
 
 Os endpoints operacionais não usam o prefixo versionado da API:
@@ -94,9 +112,9 @@ curl "http://127.0.0.1:8001/health/ready"
 ```
 
 - `/health/live` confirma que o processo consegue responder HTTP e não consulta dependências.
-- `/health/ready` executa uma consulta mínima no PostgreSQL e retorna `503` quando o banco não está disponível dentro do timeout configurado.
+- `/health/ready` verifica PostgreSQL e o bucket do object storage e retorna `503` quando qualquer dependência obrigatória não está disponível dentro de seu timeout.
 
-O timeout de readiness pode ser alterado por `DATABASE_HEALTH_TIMEOUT_SECONDS`. As respostas não expõem URL, credenciais ou mensagens internas do banco.
+Os timeouts podem ser alterados por `DATABASE_HEALTH_TIMEOUT_SECONDS`, `OBJECT_STORAGE_HEALTH_TIMEOUT_SECONDS` e `OBJECT_STORAGE_OPERATION_TIMEOUT_SECONDS`. As respostas não expõem URLs, credenciais, bucket, chaves ou mensagens internas dos provedores.
 
 ## Estrutura inicial
 
@@ -108,7 +126,7 @@ ResolveIA/
 ├── src/resolveia/       # pacote Python
 ├── tests/               # testes automatizados
 ├── AGENTS.md            # instruções permanentes do repositório
-├── compose.yml           # PostgreSQL local
+├── compose.yml           # PostgreSQL e SeaweedFS locais
 ├── pyproject.toml       # projeto, dependências e ferramentas
 └── sdd_guide.md         # processo de desenvolvimento por specs
 ```
@@ -123,6 +141,6 @@ Consulte [sdd_guide.md](sdd_guide.md) para conhecer o ciclo completo. Em resumo:
 2. a implementação começa após aprovação explícita;
 3. o responsável executa manualmente as verificações;
 4. o material de estudo é disponibilizado para revisão independente;
-5. um único commit é criado para a spec.
+5. commits pequenos e coesos são criados para a spec.
 
 As regras obrigatórias para agentes e colaboradores estão em [AGENTS.md](AGENTS.md).
