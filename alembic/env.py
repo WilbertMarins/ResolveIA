@@ -8,7 +8,7 @@ from sqlalchemy import Connection, pool
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from resolveia.infrastructure.config import get_settings
-from resolveia.infrastructure.database.models import TicketModel
+from resolveia.infrastructure.database.models import KnowledgeDocumentModel
 
 config = context.config
 
@@ -17,7 +17,7 @@ if config.config_file_name is not None:
 
 database_url = get_settings().database_url.get_secret_value()
 config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
-target_metadata = TicketModel.metadata
+target_metadata = KnowledgeDocumentModel.metadata
 
 
 def run_migrations_offline() -> None:
