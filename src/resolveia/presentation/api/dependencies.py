@@ -5,9 +5,14 @@ from typing import Annotated, cast
 
 from fastapi import Depends, Request
 
-from resolveia.application.ports import TicketRepository
+from resolveia.application.ports import ReadinessCheck, TicketRepository
 from resolveia.application.use_cases import CreateTicket, GetTicket
 from resolveia.infrastructure.database import PostgresTicketRepository, SessionFactory
+
+
+def get_readiness_check(request: Request) -> ReadinessCheck:
+    """Return the readiness check configured for this application."""
+    return cast(ReadinessCheck, request.app.state.readiness_check)
 
 
 async def get_ticket_repository(request: Request) -> AsyncIterator[TicketRepository]:

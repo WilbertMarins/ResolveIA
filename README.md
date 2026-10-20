@@ -84,6 +84,20 @@ curl "http://127.0.0.1:8001/api/v1/tickets/550e8400-e29b-41d4-a716-446655440000"
 
 A consulta retorna `200 OK` para um chamado existente, `404 Not Found` para um UUID não armazenado e `422 Unprocessable Entity` para um identificador malformado.
 
+## Health checks
+
+Os endpoints operacionais não usam o prefixo versionado da API:
+
+```bash
+curl "http://127.0.0.1:8001/health/live"
+curl "http://127.0.0.1:8001/health/ready"
+```
+
+- `/health/live` confirma que o processo consegue responder HTTP e não consulta dependências.
+- `/health/ready` executa uma consulta mínima no PostgreSQL e retorna `503` quando o banco não está disponível dentro do timeout configurado.
+
+O timeout de readiness pode ser alterado por `DATABASE_HEALTH_TIMEOUT_SECONDS`. As respostas não expõem URL, credenciais ou mensagens internas do banco.
+
 ## Estrutura inicial
 
 ```text
