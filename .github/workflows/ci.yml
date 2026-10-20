@@ -13,6 +13,23 @@ jobs:
     name: Quality
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://resolveia:resolveia_ci@127.0.0.1:5433/resolveia
+
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.7-pg17
+        env:
+          POSTGRES_USER: resolveia
+          POSTGRES_PASSWORD: resolveia_ci
+          POSTGRES_DB: resolveia
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U resolveia -d resolveia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Check out repository
@@ -34,6 +51,9 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --frozen --dev
+
+      - name: Apply database migrations
+        run: uv run --frozen alembic upgrade head
 
       - name: Run lint
         run: uv run --frozen ruff check .

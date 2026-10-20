@@ -2,7 +2,7 @@
 
 O ResolveIA é uma plataforma multiagente de suporte técnico para uma API fictícia de pagamentos. O sistema será capaz de triar chamados, buscar evidências, propor resoluções fundamentadas e encaminhar casos sensíveis ou incertos para revisão humana.
 
-O projeto é desenvolvido como portfólio técnico usando Specification-Driven Development (SDD). O primeiro fluxo funcional permite cadastrar chamados por uma API HTTP; a persistência ainda é volátil e será substituída em um incremento posterior.
+O projeto é desenvolvido como portfólio técnico usando Specification-Driven Development (SDD). O fluxo atual permite cadastrar e consultar chamados por uma API HTTP com persistência em PostgreSQL.
 
 ## Princípios
 
@@ -17,6 +17,7 @@ O projeto é desenvolvido como portfólio técnico usando Specification-Driven D
 
 - Python 3.12.
 - `uv` 0.11.15 ou superior, sem alcançar a versão 0.13.
+- Docker Desktop com Docker Compose.
 - Git.
 
 ## Preparação do ambiente
@@ -28,6 +29,16 @@ uv sync --dev
 ```
 
 O `uv` cria e gerencia o ambiente virtual automaticamente. Não é necessário ativá-lo para executar os comandos abaixo.
+
+Crie a configuração local, inicie o PostgreSQL na porta `5433` e aplique as migrações:
+
+```powershell
+Copy-Item .env.example .env
+docker compose up -d postgres
+uv run alembic upgrade head
+```
+
+O volume `resolveia_postgres_data` preserva os dados quando o container ou a API é reiniciado. A aplicação não cria tabelas automaticamente; o Alembic é a fonte de verdade do schema.
 
 ## Verificações de qualidade
 
@@ -63,9 +74,9 @@ curl -X POST "http://127.0.0.1:8001/api/v1/tickets" \
   }'
 ```
 
-O endpoint retorna `201 Created`, um identificador UUID, o estado inicial `received` e o horário de criação em UTC. Os dados são mantidos somente na memória do processo e são perdidos ao reiniciar a aplicação.
+O endpoint retorna `201 Created`, um identificador UUID, o estado inicial `received` e o horário de criação em UTC. Os dados permanecem disponíveis após reiniciar a API enquanto o volume do PostgreSQL for preservado.
 
-Use o valor retornado no cabeçalho `Location` para consultar o chamado no mesmo processo:
+Use o valor retornado no cabeçalho `Location` para consultar o chamado:
 
 ```bash
 curl "http://127.0.0.1:8001/api/v1/tickets/550e8400-e29b-41d4-a716-446655440000"
@@ -77,11 +88,13 @@ A consulta retorna `200 OK` para um chamado existente, `404 Not Found` para um U
 
 ```text
 ResolveIA/
+├── alembic/             # migrações do schema relacional
 ├── .github/workflows/   # integração contínua
 ├── docs/                # templates e documentação técnica
 ├── src/resolveia/       # pacote Python
 ├── tests/               # testes automatizados
 ├── AGENTS.md            # instruções permanentes do repositório
+├── compose.yml           # PostgreSQL local
 ├── pyproject.toml       # projeto, dependências e ferramentas
 └── sdd_guide.md         # processo de desenvolvimento por specs
 ```
@@ -95,7 +108,7 @@ Consulte [sdd_guide.md](sdd_guide.md) para conhecer o ciclo completo. Em resumo:
 1. uma spec local é elaborada e discutida;
 2. a implementação começa após aprovação explícita;
 3. o responsável executa manualmente as verificações;
-4. o conteúdo é revisado de forma didática;
+4. o material de estudo é disponibilizado para revisão independente;
 5. um único commit é criado para a spec.
 
 As regras obrigatórias para agentes e colaboradores estão em [AGENTS.md](AGENTS.md).
