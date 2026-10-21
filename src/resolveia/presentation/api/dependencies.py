@@ -11,7 +11,12 @@ from resolveia.application.ports import (
     ReadinessCheck,
     TicketRepository,
 )
-from resolveia.application.use_cases import CreateTicket, GetTicket, UploadKnowledgeDocument
+from resolveia.application.use_cases import (
+    CreateTicket,
+    GetKnowledgeDocument,
+    GetTicket,
+    UploadKnowledgeDocument,
+)
 from resolveia.infrastructure.database import (
     PostgresKnowledgeDocumentRepository,
     PostgresTicketRepository,
@@ -86,3 +91,13 @@ def get_upload_knowledge_document(
     """Build the upload use case with request-scoped dependencies."""
     bucket = cast(str, request.app.state.object_storage_bucket)
     return UploadKnowledgeDocument(repository, object_storage, bucket)
+
+
+def get_get_knowledge_document(
+    repository: Annotated[
+        KnowledgeDocumentRepository,
+        Depends(get_knowledge_document_repository),
+    ],
+) -> GetKnowledgeDocument:
+    """Build the document-state query with a request-scoped repository."""
+    return GetKnowledgeDocument(repository)

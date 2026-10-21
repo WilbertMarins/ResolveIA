@@ -26,3 +26,21 @@ class KnowledgeDocumentResponse(BaseModel):
     valid_until: date | None
     status: DocumentStatus
     created_at: datetime
+
+
+class ExtractionSummaryResponse(BaseModel):
+    """Public counts produced by a successful extraction."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    segment_count: int
+    character_count: int
+    extracted_at: datetime
+
+
+class KnowledgeDocumentDetailsResponse(KnowledgeDocumentResponse):
+    """Current ingestion state without internal storage or lease details."""
+
+    failure_reason: str | None
+    extraction: ExtractionSummaryResponse | None
+    updated_at: datetime
