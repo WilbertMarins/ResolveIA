@@ -37,6 +37,14 @@ async def exercise_object_storage() -> None:
         )
         assert response["ContentType"] == "text/plain"
         assert response["Metadata"]["document-id"] == "integration-test"
+        assert (
+            await storage.get(
+                settings.object_storage_bucket,
+                OBJECT_KEY,
+                1024,
+            )
+            == b"synthetic integration document"
+        )
 
         readiness = S3ReadinessCheck(
             client,

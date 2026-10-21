@@ -9,7 +9,11 @@ import boto3
 from botocore.config import Config
 from botocore.exceptions import BotoCoreError, ClientError
 
-from resolveia.application.ports import ObjectStorageError, ObjectToStore
+from resolveia.application.ports import (
+    ObjectStorageError,
+    ObjectStorageNotFoundError,
+    ObjectToStore,
+)
 from resolveia.infrastructure.config import Settings
 
 if TYPE_CHECKING:
@@ -56,6 +60,35 @@ class S3ObjectStorage:
                 )
         except (TimeoutError, OSError, BotoCoreError, ClientError) as error:
             raise ObjectStorageError("S3-compatible upload failed") from error
+
+    async def get(self, bucket: str, key: str, maximum_bytes: int) -> bytes:
+        """Download at most maximum_bytes while keeping provider details private."""
+        try:
+            async with asyncio.timeout(self._timeout_seconds):
+                return await asyncio.to_thread(
+                    self._read_bounded_object,
+                    bucket,
+                    key,
+                    maximum_bytes,
+                )
+        except ClientError as error:
+            error_code = str(error.response.get("Error", {}).get("Code", ""))
+            if error_code in {"404", "NoSuchKey", "NotFound"}:
+                raise ObjectStorageNotFoundError("Source object was not found") from error
+            raise ObjectStorageError("S3-compatible download failed") from error
+        except (TimeoutError, OSError, BotoCoreError) as error:
+            raise ObjectStorageError("S3-compatible download failed") from error
+
+    def _read_bounded_object(self, bucket: str, key: str, maximum_bytes: int) -> bytes:
+        response = self._client.get_object(Bucket=bucket, Key=key)
+        body = response["Body"]
+        try:
+            content = body.read(maximum_bytes + 1)
+        finally:
+            body.close()
+        if len(content) > maximum_bytes:
+            raise ObjectStorageError("Source object exceeds the configured limit")
+        return content
 
 
 class S3ReadinessCheck:
