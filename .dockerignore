@@ -1,0 +1,11 @@
+.env
+.git
+.github
+.mypy_cache
+.pytest_cache
+.ruff_cache
+.venv
+docs/specs
+study
+tests
+resolveia-referencia.md

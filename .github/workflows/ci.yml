@@ -20,6 +20,7 @@ jobs:
       OBJECT_STORAGE_SECRET_KEY: resolveia_ci_secret
       OBJECT_STORAGE_BUCKET: resolveia-knowledge
       OBJECT_STORAGE_REGION: us-east-1
+      CELERY_BROKER_URL: amqp://resolveia:resolveia_ci@127.0.0.1:5673//
 
     services:
       postgres:
@@ -32,6 +33,18 @@ jobs:
           - 5433:5432
         options: >-
           --health-cmd "pg_isready -U resolveia -d resolveia"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      rabbitmq:
+        image: rabbitmq:4.4-management
+        env:
+          RABBITMQ_DEFAULT_USER: resolveia
+          RABBITMQ_DEFAULT_PASS: resolveia_ci
+        ports:
+          - 5673:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q ping"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10

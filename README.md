@@ -2,7 +2,7 @@
 
 O ResolveIA é uma plataforma multiagente de suporte técnico para uma API fictícia de pagamentos. O sistema será capaz de triar chamados, buscar evidências, propor resoluções fundamentadas e encaminhar casos sensíveis ou incertos para revisão humana.
 
-O projeto é desenvolvido como portfólio técnico usando Specification-Driven Development (SDD). O fluxo atual permite cadastrar e consultar chamados e receber documentos técnicos para a base de conhecimento, com metadados no PostgreSQL e arquivos originais no SeaweedFS.
+O projeto é desenvolvido como portfólio técnico usando Specification-Driven Development (SDD). O fluxo atual permite cadastrar e consultar chamados e ingerir documentos técnicos de forma assíncrona, com PostgreSQL, SeaweedFS, RabbitMQ e workers Celery.
 
 ## Princípios
 
@@ -30,16 +30,17 @@ uv sync --dev
 
 O `uv` cria e gerencia o ambiente virtual automaticamente. Não é necessário ativá-lo para executar os comandos abaixo.
 
-Crie a configuração local, inicie o PostgreSQL na porta `5433` e o endpoint S3 do SeaweedFS na porta `8333`, aplique as migrações e crie o bucket local:
+Crie a configuração local, inicie PostgreSQL, SeaweedFS e RabbitMQ, aplique as migrações e crie o bucket local:
 
 ```powershell
 Copy-Item .env.example .env
-docker compose up -d postgres seaweedfs
+docker compose up -d postgres seaweedfs rabbitmq
 uv run alembic upgrade head
 uv run python -m resolveia.infrastructure.storage.bootstrap
+docker compose up -d --build extraction-worker outbox-dispatcher
 ```
 
-Os volumes `resolveia_postgres_data` e `resolveia_seaweedfs_data` preservam os dados quando os containers ou a API são reiniciados. A aplicação não cria tabelas nem buckets automaticamente: o Alembic é a fonte de verdade do schema e o comando de bootstrap prepara explicitamente o bucket de desenvolvimento.
+Por padrão, PostgreSQL usa a porta `5433`, SeaweedFS usa `8333`, RabbitMQ usa `5673` e sua interface de gerenciamento fica em `http://127.0.0.1:15673`. Os volumes nomeados preservam os dados quando os containers são reiniciados. A aplicação não cria tabelas nem buckets automaticamente: o Alembic é a fonte de verdade do schema e o comando de bootstrap prepara explicitamente o bucket.
 
 ## Verificações de qualidade
 
@@ -100,7 +101,22 @@ curl -X POST "http://127.0.0.1:8001/api/v1/knowledge/documents" \
   -F "valid_until=2027-10-31"
 ```
 
-O arquivo pode ter no máximo 10 MiB. A API valida extensão, tipo declarado e conteúdo mínimo, calcula o SHA-256, armazena o original no bucket configurado e retorna `201 Created` com o estado `pending_ingestion`. A chave interna e o bucket não são expostos no contrato HTTP. Extração, chunks e embeddings ainda não fazem parte deste incremento.
+O arquivo pode ter no máximo 10 MiB. A API valida extensão, tipo declarado e conteúdo mínimo, calcula o SHA-256, armazena o original e retorna `201 Created` com o estado `pending_ingestion`. Na mesma transação que conclui o upload, uma outbox registra o trabalho. O dispatcher o publica no RabbitMQ e o worker extrai texto normalizado, mantendo uma unidade para Markdown/texto e uma por página textual de PDF. Chunks, embeddings e OCR continuam fora do escopo.
+
+Consulte o estado usando o UUID retornado pelo upload:
+
+```bash
+curl "http://127.0.0.1:8001/api/v1/knowledge/documents/d39a3706-fd8e-4c93-b550-221e3b7d8a91"
+```
+
+A consulta apresenta `pending_ingestion`, `processing`, `extracted` ou `ingestion_failed`. Quando concluída, inclui somente quantidades de segmentos e caracteres e o horário da extração. Conteúdo, bucket, chave, lease e tentativas não são expostos.
+
+Para executar os processos fora do Compose durante o desenvolvimento:
+
+```bash
+uv run celery --app=resolveia.infrastructure.messaging.celery_app:celery_app worker --loglevel=INFO --queues=knowledge-extraction
+uv run python -m resolveia.infrastructure.messaging.dispatcher
+```
 
 ## Health checks
 
@@ -112,7 +128,7 @@ curl "http://127.0.0.1:8001/health/ready"
 ```
 
 - `/health/live` confirma que o processo consegue responder HTTP e não consulta dependências.
-- `/health/ready` verifica PostgreSQL e o bucket do object storage e retorna `503` quando qualquer dependência obrigatória não está disponível dentro de seu timeout.
+- `/health/ready` verifica PostgreSQL e o bucket do object storage e retorna `503` quando qualquer dependência obrigatória não está disponível dentro de seu timeout. RabbitMQ não participa da readiness da API porque a outbox aceita o trabalho enquanto o broker está indisponível.
 
 Os timeouts podem ser alterados por `DATABASE_HEALTH_TIMEOUT_SECONDS`, `OBJECT_STORAGE_HEALTH_TIMEOUT_SECONDS` e `OBJECT_STORAGE_OPERATION_TIMEOUT_SECONDS`. As respostas não expõem URLs, credenciais, bucket, chaves ou mensagens internas dos provedores.
 
@@ -126,7 +142,8 @@ ResolveIA/
 ├── src/resolveia/       # pacote Python
 ├── tests/               # testes automatizados
 ├── AGENTS.md            # instruções permanentes do repositório
-├── compose.yml           # PostgreSQL e SeaweedFS locais
+├── compose.yml           # infraestrutura e processos assíncronos locais
+├── Dockerfile            # imagem compartilhada por worker e dispatcher
 ├── pyproject.toml       # projeto, dependências e ferramentas
 └── sdd_guide.md         # processo de desenvolvimento por specs
 ```
