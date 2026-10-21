@@ -21,3 +21,15 @@ class KnowledgeFileTooLargeError(ValueError):
 
 class KnowledgeUploadUnavailableError(RuntimeError):
     """Raised when a valid upload cannot be stored in object storage."""
+
+
+class KnowledgeDocumentNotFoundError(LookupError):
+    """Raised when knowledge-document metadata cannot be found."""
+
+    def __init__(self, document_id: UUID) -> None:
+        self.document_id = document_id
+        super().__init__(f"Knowledge document {document_id} not found")
+
+
+class TransientExtractionError(RuntimeError):
+    """Requests a bounded broker-managed retry for extraction."""

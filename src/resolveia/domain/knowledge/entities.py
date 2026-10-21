@@ -46,6 +46,10 @@ class KnowledgeDocument:
     failure_reason: str | None
     created_at: datetime
     updated_at: datetime
+    processing_started_at: datetime | None = None
+    processing_lease_until: datetime | None = None
+    extracted_at: datetime | None = None
+    extraction_attempts: int = 0
 
     def __post_init__(self) -> None:
         """Protect metadata invariants independently of entry point."""
@@ -77,11 +81,49 @@ class KnowledgeDocument:
                 raise KnowledgeDocumentValidationError(f"{field_name} must use UTC")
         if self.updated_at < self.created_at:
             raise KnowledgeDocumentValidationError("updated_at cannot precede created_at")
-        if self.status is DocumentStatus.UPLOAD_FAILED and not self.failure_reason:
-            raise KnowledgeDocumentValidationError("failed uploads require a failure reason")
-        if self.status is not DocumentStatus.UPLOAD_FAILED and self.failure_reason is not None:
+        for field_name, value in (
+            ("processing_started_at", self.processing_started_at),
+            ("processing_lease_until", self.processing_lease_until),
+            ("extracted_at", self.extracted_at),
+        ):
+            if value is not None and (
+                value.tzinfo is None
+                or value.utcoffset() is None
+                or value.utcoffset() != timedelta(0)
+            ):
+                raise KnowledgeDocumentValidationError(f"{field_name} must use UTC")
+        if self.extraction_attempts < 0:
+            raise KnowledgeDocumentValidationError("extraction_attempts cannot be negative")
+        failed_statuses = {
+            DocumentStatus.UPLOAD_FAILED,
+            DocumentStatus.INGESTION_FAILED,
+        }
+        if self.status in failed_statuses and not self.failure_reason:
+            raise KnowledgeDocumentValidationError("failed documents require a failure reason")
+        if self.status not in failed_statuses and self.failure_reason is not None:
             raise KnowledgeDocumentValidationError(
-                "failure_reason is only allowed for failed uploads"
+                "failure_reason is only allowed for failed documents"
+            )
+        if self.status is DocumentStatus.PROCESSING:
+            if self.processing_started_at is None or self.processing_lease_until is None:
+                raise KnowledgeDocumentValidationError(
+                    "processing documents require timestamps and a lease"
+                )
+            if self.processing_lease_until <= self.processing_started_at:
+                raise KnowledgeDocumentValidationError(
+                    "processing lease must end after processing starts"
+                )
+        elif self.processing_lease_until is not None:
+            raise KnowledgeDocumentValidationError(
+                "only processing documents can hold a processing lease"
+            )
+        if self.status is DocumentStatus.EXTRACTED and self.extracted_at is None:
+            raise KnowledgeDocumentValidationError(
+                "extracted documents require extracted_at"
+            )
+        if self.status is not DocumentStatus.EXTRACTED and self.extracted_at is not None:
+            raise KnowledgeDocumentValidationError(
+                "extracted_at is only allowed for extracted documents"
             )
 
     def mark_pending_ingestion(self, updated_at: datetime) -> "KnowledgeDocument":
@@ -107,4 +149,88 @@ class KnowledgeDocument:
             status=DocumentStatus.UPLOAD_FAILED,
             failure_reason=reason,
             updated_at=updated_at,
+        )
+
+    def start_processing(
+        self,
+        started_at: datetime,
+        lease_until: datetime,
+    ) -> "KnowledgeDocument":
+        """Claim a pending document for one extraction attempt."""
+        if self.status is not DocumentStatus.PENDING_INGESTION:
+            raise KnowledgeDocumentValidationError(
+                "only pending documents can start processing"
+            )
+        return replace(
+            self,
+            status=DocumentStatus.PROCESSING,
+            processing_started_at=started_at,
+            processing_lease_until=lease_until,
+            extraction_attempts=self.extraction_attempts + 1,
+            updated_at=started_at,
+        )
+
+    def release_for_retry(self, updated_at: datetime) -> "KnowledgeDocument":
+        """Release a processing claim before a broker-managed retry."""
+        if self.status is not DocumentStatus.PROCESSING:
+            raise KnowledgeDocumentValidationError(
+                "only processing documents can be released for retry"
+            )
+        return replace(
+            self,
+            status=DocumentStatus.PENDING_INGESTION,
+            processing_started_at=None,
+            processing_lease_until=None,
+            updated_at=updated_at,
+        )
+
+    def mark_extracted(self, extracted_at: datetime) -> "KnowledgeDocument":
+        """Complete extraction after all normalized segments are ready."""
+        if self.status is not DocumentStatus.PROCESSING:
+            raise KnowledgeDocumentValidationError(
+                "only processing documents can become extracted"
+            )
+        return replace(
+            self,
+            status=DocumentStatus.EXTRACTED,
+            processing_lease_until=None,
+            extracted_at=extracted_at,
+            updated_at=extracted_at,
+        )
+
+    def mark_ingestion_failed(
+        self,
+        failed_at: datetime,
+        reason: str,
+    ) -> "KnowledgeDocument":
+        """Finish a pending or processing document with a sanitized failure."""
+        if self.status not in {
+            DocumentStatus.PENDING_INGESTION,
+            DocumentStatus.PROCESSING,
+        }:
+            raise KnowledgeDocumentValidationError(
+                "only pending or processing documents can fail ingestion"
+            )
+        return replace(
+            self,
+            status=DocumentStatus.INGESTION_FAILED,
+            failure_reason=reason,
+            processing_lease_until=None,
+            updated_at=failed_at,
+        )
+
+    def recover_expired_lease(self, recovered_at: datetime) -> "KnowledgeDocument":
+        """Return an abandoned processing document to the pending state."""
+        if self.status is not DocumentStatus.PROCESSING:
+            raise KnowledgeDocumentValidationError(
+                "only processing documents can recover an expired lease"
+            )
+        if self.processing_lease_until is None or self.processing_lease_until > recovered_at:
+            raise KnowledgeDocumentValidationError("processing lease has not expired")
+        return replace(
+            self,
+            status=DocumentStatus.PENDING_INGESTION,
+            processing_started_at=None,
+            processing_lease_until=None,
+            updated_at=recovered_at,
         )

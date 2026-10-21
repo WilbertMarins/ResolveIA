@@ -8,6 +8,10 @@ class ObjectStorageError(RuntimeError):
     """Raised when object storage cannot complete an operation."""
 
 
+class ObjectStorageNotFoundError(ObjectStorageError):
+    """Raised when a requested source object does not exist."""
+
+
 @dataclass(frozen=True, slots=True)
 class ObjectToStore:
     """Provider-independent object upload data."""
@@ -24,4 +28,8 @@ class ObjectStorage(Protocol):
 
     async def put(self, item: ObjectToStore) -> None:
         """Upload one object or raise ObjectStorageError."""
+        ...
+
+    async def get(self, bucket: str, key: str, maximum_bytes: int) -> bytes:
+        """Read a bounded object or raise ObjectStorageError."""
         ...
