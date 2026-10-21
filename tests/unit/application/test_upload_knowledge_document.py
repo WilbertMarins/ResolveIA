@@ -18,7 +18,13 @@ from resolveia.application.use_cases import (
     UploadKnowledgeDocument,
     UploadKnowledgeDocumentCommand,
 )
-from resolveia.domain.knowledge import DocumentStatus, DocumentType, KnowledgeDocument
+from resolveia.domain.knowledge import (
+    DocumentStatus,
+    DocumentType,
+    ExtractionSummary,
+    KnowledgeDocument,
+    OutboxEvent,
+)
 
 DOCUMENT_ID = UUID("d39a3706-fd8e-4c93-b550-221e3b7d8a91")
 NOW = datetime(2026, 10, 19, 14, 30, tzinfo=UTC)
@@ -31,12 +37,30 @@ class RecordingDocumentRepository:
     def __init__(self) -> None:
         self.added: list[KnowledgeDocument] = []
         self.updated: list[KnowledgeDocument] = []
+        self.events: list[OutboxEvent] = []
 
     async def add(self, document: KnowledgeDocument) -> None:
         self.added.append(document)
 
     async def update(self, document: KnowledgeDocument) -> None:
         self.updated.append(document)
+
+    async def complete_upload(
+        self,
+        document: KnowledgeDocument,
+        event: OutboxEvent,
+    ) -> None:
+        self.updated.append(document)
+        self.events.append(event)
+
+    async def get(self, document_id: UUID) -> KnowledgeDocument | None:
+        return next((item for item in self.updated if item.id == document_id), None)
+
+    async def get_extraction_summary(
+        self,
+        document_id: UUID,
+    ) -> ExtractionSummary | None:
+        return None
 
 
 class RecordingObjectStorage:
@@ -50,6 +74,9 @@ class RecordingObjectStorage:
         self.items.append(item)
         if self.fail:
             raise ObjectStorageError("endpoint=http://internal secret=hidden")
+
+    async def get(self, bucket: str, key: str, maximum_bytes: int) -> bytes:
+        raise NotImplementedError
 
 
 def command(**changes: object) -> UploadKnowledgeDocumentCommand:
@@ -99,6 +126,7 @@ def test_uploads_valid_document_and_marks_it_pending() -> None:
         "document-id": str(DOCUMENT_ID),
         "sha256": document.checksum_sha256,
     }
+    assert repository.events[0].aggregate_id == DOCUMENT_ID
 
 
 def test_sanitizes_client_path_without_using_it_as_storage_key() -> None:

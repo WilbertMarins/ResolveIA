@@ -14,6 +14,10 @@ from resolveia.application.exceptions import (
     KnowledgeFileTooLargeError,
     KnowledgeUploadUnavailableError,
 )
+from resolveia.application.messages import (
+    EXTRACTION_CONTRACT_VERSION,
+    EXTRACTION_EVENT_TYPE,
+)
 from resolveia.application.ports import (
     KnowledgeDocumentRepository,
     ObjectStorage,
@@ -25,6 +29,7 @@ from resolveia.domain.knowledge import (
     DocumentType,
     KnowledgeDocument,
     KnowledgeDocumentValidationError,
+    OutboxEvent,
 )
 
 MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024
@@ -37,6 +42,7 @@ UPLOAD_FAILURE_REASON = "object_storage_upload_failed"
 logger = logging.getLogger(__name__)
 
 type DocumentIdFactory = Callable[[], UUID]
+type EventIdFactory = Callable[[], UUID]
 type Clock = Callable[[], datetime]
 
 
@@ -69,12 +75,14 @@ class UploadKnowledgeDocument:
         object_storage: ObjectStorage,
         bucket: str,
         id_factory: DocumentIdFactory = uuid4,
+        event_id_factory: EventIdFactory = uuid4,
         clock: Clock = utc_now,
     ) -> None:
         self._repository = repository
         self._object_storage = object_storage
         self._bucket = bucket
         self._id_factory = id_factory
+        self._event_id_factory = event_id_factory
         self._clock = clock
 
     async def execute(
@@ -155,7 +163,19 @@ class UploadKnowledgeDocument:
             raise KnowledgeUploadUnavailableError("Object storage upload failed") from error
 
         uploaded_document = document.mark_pending_ingestion(self._normalized_time())
-        await self._repository.update(uploaded_document)
+        event_id = self._event_id_factory()
+        event = OutboxEvent(
+            id=event_id,
+            event_type=EXTRACTION_EVENT_TYPE,
+            aggregate_id=document.id,
+            payload={
+                "event_id": str(event_id),
+                "document_id": str(document.id),
+                "contract_version": EXTRACTION_CONTRACT_VERSION,
+            },
+            occurred_at=uploaded_document.updated_at,
+        )
+        await self._repository.complete_upload(uploaded_document, event)
         logger.info(
             "knowledge_document_upload_completed",
             extra={
