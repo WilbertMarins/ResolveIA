@@ -47,9 +47,7 @@ class DispatchOutbox:
             try:
                 await self._publisher.publish(message)
             except TaskPublishError:
-                await self._repository.update(
-                    event.mark_publish_failed(PUBLISH_FAILURE_REASON)
-                )
+                await self._repository.update(event.mark_publish_failed(PUBLISH_FAILURE_REASON))
                 failed += 1
             else:
                 await self._repository.update(event.mark_published(self._now()))

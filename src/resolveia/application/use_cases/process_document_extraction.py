@@ -100,9 +100,7 @@ class ProcessDocumentExtraction:
                     ExtractionFailureCode.ATTEMPTS_EXHAUSTED,
                     extraction_started_at,
                 )
-            updated = await self._repository.update_claimed(
-                document.release_for_retry(self._now())
-            )
+            updated = await self._repository.update_claimed(document.release_for_retry(self._now()))
             if not updated:
                 return ExtractionOutcome.SKIPPED
             raise TransientExtractionError("source object is temporarily unavailable") from error

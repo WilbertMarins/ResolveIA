@@ -38,10 +38,7 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def validate_time_limits(self) -> "Settings":
         """Require Celery's hard limit to leave room after the soft signal."""
-        if (
-            self.extraction_hard_time_limit_seconds
-            <= self.extraction_soft_time_limit_seconds
-        ):
+        if self.extraction_hard_time_limit_seconds <= self.extraction_soft_time_limit_seconds:
             raise ValueError("extraction hard time limit must exceed soft time limit")
         return self
 

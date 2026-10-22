@@ -50,9 +50,7 @@ def extract_document(task: Task, payload: dict[str, object]) -> None:
             max_retries=settings.extraction_maximum_attempts - 1,
         ) from error
     except SQLAlchemyError:
-        sanitized_error = TransientExtractionError(
-            "database operation is temporarily unavailable"
-        )
+        sanitized_error = TransientExtractionError("database operation is temporarily unavailable")
         if final_attempt:
             raise sanitized_error from None
         countdown = get_exponential_backoff_interval(

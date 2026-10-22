@@ -57,9 +57,7 @@ async def exercise_repository() -> None:
             assert stored is not None
             assert stored.to_domain() == pending
             await session.execute(
-                delete(KnowledgeDocumentModel).where(
-                    KnowledgeDocumentModel.id == DOCUMENT_ID
-                )
+                delete(KnowledgeDocumentModel).where(KnowledgeDocumentModel.id == DOCUMENT_ID)
             )
             await session.commit()
     finally:

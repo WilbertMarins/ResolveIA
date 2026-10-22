@@ -20,10 +20,7 @@ def textual_pdf() -> bytes:
             b"/Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>"
         ),
         b"<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-        (
-            b"<< /Length 39 >>\nstream\n"
-            b"BT /F1 12 Tf 10 50 Td (Synthetic) Tj ET\nendstream"
-        ),
+        (b"<< /Length 39 >>\nstream\nBT /F1 12 Tf 10 50 Td (Synthetic) Tj ET\nendstream"),
     ]
     output = bytearray(b"%PDF-1.4\n")
     offsets = [0]

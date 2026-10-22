@@ -60,17 +60,11 @@ def uploading_document() -> KnowledgeDocument:
 async def clean(session_factory: SessionFactory) -> None:
     async with session_factory() as session:
         await session.execute(
-            delete(ExtractedSegmentModel).where(
-                ExtractedSegmentModel.document_id == DOCUMENT_ID
-            )
+            delete(ExtractedSegmentModel).where(ExtractedSegmentModel.document_id == DOCUMENT_ID)
         )
+        await session.execute(delete(OutboxEventModel).where(OutboxEventModel.id == EVENT_ID))
         await session.execute(
-            delete(OutboxEventModel).where(OutboxEventModel.id == EVENT_ID)
-        )
-        await session.execute(
-            delete(KnowledgeDocumentModel).where(
-                KnowledgeDocumentModel.id == DOCUMENT_ID
-            )
+            delete(KnowledgeDocumentModel).where(KnowledgeDocumentModel.id == DOCUMENT_ID)
         )
         await session.commit()
 
@@ -121,9 +115,7 @@ async def exercise_extraction_persistence() -> None:
                 page_number=None,
                 content=content,
                 character_count=len(content),
-                content_checksum_sha256=hashlib.sha256(
-                    content.encode("utf-8")
-                ).hexdigest(),
+                content_checksum_sha256=hashlib.sha256(content.encode("utf-8")).hexdigest(),
                 created_at=NOW + timedelta(seconds=3),
             )
             completed = processing.mark_extracted(NOW + timedelta(seconds=3))
@@ -137,9 +129,9 @@ async def exercise_extraction_persistence() -> None:
                 NOW + timedelta(minutes=5),
             )
             assert duplicate is None
-            summary = await PostgresKnowledgeDocumentRepository(
-                session
-            ).get_extraction_summary(DOCUMENT_ID)
+            summary = await PostgresKnowledgeDocumentRepository(session).get_extraction_summary(
+                DOCUMENT_ID
+            )
             assert summary is not None
             assert summary.segment_count == 1
             assert summary.character_count == len("synthetic content")

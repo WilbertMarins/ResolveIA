@@ -136,9 +136,7 @@ class PostgresExtractionRepository:
             await self._session.rollback()
             return False
         await self._session.merge(KnowledgeDocumentModel.from_domain(document))
-        self._session.add_all(
-            [ExtractedSegmentModel.from_domain(segment) for segment in segments]
-        )
+        self._session.add_all([ExtractedSegmentModel.from_domain(segment) for segment in segments])
         await self._commit()
         return True
 

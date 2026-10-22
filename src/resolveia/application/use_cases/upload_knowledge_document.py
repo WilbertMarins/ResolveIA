@@ -116,9 +116,7 @@ class UploadKnowledgeDocument:
             checksum_sha256=checksum,
             product=command.product.strip(),
             product_version=(
-                command.product_version.strip()
-                if command.product_version is not None
-                else None
+                command.product_version.strip() if command.product_version is not None else None
             ),
             document_version=command.document_version.strip(),
             document_type=command.document_type,
@@ -197,10 +195,7 @@ class UploadKnowledgeDocument:
         content_type: str,
         content: bytes,
     ) -> tuple[str, str]:
-        if any(
-            ord(character) < 32 or ord(character) == 127
-            for character in original_filename
-        ):
+        if any(ord(character) < 32 or ord(character) == 127 for character in original_filename):
             raise InvalidKnowledgeFileError("Filename contains control characters")
 
         filename = PurePosixPath(original_filename.replace("\\", "/")).name.strip()

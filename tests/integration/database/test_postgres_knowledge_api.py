@@ -44,9 +44,7 @@ async def assert_persisted_and_remove(document_id: UUID) -> None:
                 Key=model.storage_key,
             )
             await session.execute(
-                delete(KnowledgeDocumentModel).where(
-                    KnowledgeDocumentModel.id == document_id
-                )
+                delete(KnowledgeDocumentModel).where(KnowledgeDocumentModel.id == document_id)
             )
             await session.commit()
     finally:

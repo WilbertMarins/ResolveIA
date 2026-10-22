@@ -119,9 +119,7 @@ def test_get_returns_pending_state_without_internal_fields() -> None:
             data=valid_form(),
             files={"file": ("payments-api.md", b"# Synthetic API", "text/markdown")},
         )
-        response = client.get(
-            f"/api/v1/knowledge/documents/{upload_response.json()['id']}"
-        )
+        response = client.get(f"/api/v1/knowledge/documents/{upload_response.json()['id']}")
 
     body = response.json()
     assert response.status_code == 200
@@ -137,9 +135,7 @@ def test_get_returns_not_found_for_unknown_document() -> None:
     storage = InMemoryObjectStorage()
 
     with create_test_client(repository, storage) as client:
-        response = client.get(
-            "/api/v1/knowledge/documents/aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa"
-        )
+        response = client.get("/api/v1/knowledge/documents/aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa")
 
     assert response.status_code == 404
 

@@ -73,16 +73,13 @@ class OutboxEvent:
         if self.occurred_at.tzinfo is None or self.occurred_at.utcoffset() != timedelta(0):
             raise IngestionValidationError("occurred_at must use UTC")
         if self.published_at is not None and (
-            self.published_at.tzinfo is None
-            or self.published_at.utcoffset() != timedelta(0)
+            self.published_at.tzinfo is None or self.published_at.utcoffset() != timedelta(0)
         ):
             raise IngestionValidationError("published_at must use UTC")
         if self.publish_attempts < 0:
             raise IngestionValidationError("publish_attempts cannot be negative")
         if self.published_at is not None and self.last_failure_reason is not None:
-            raise IngestionValidationError(
-                "published events cannot retain a failure reason"
-            )
+            raise IngestionValidationError("published events cannot retain a failure reason")
 
     def mark_published(self, published_at: datetime) -> "OutboxEvent":
         """Return an event acknowledged by the broker publisher."""

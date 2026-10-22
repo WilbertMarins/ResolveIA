@@ -19,9 +19,7 @@ def _validate_text(value: str, field_name: str, maximum: int) -> None:
     if not value or value != value.strip():
         raise KnowledgeDocumentValidationError(f"{field_name} must be non-empty and trimmed")
     if len(value) > maximum:
-        raise KnowledgeDocumentValidationError(
-            f"{field_name} must not exceed {maximum} characters"
-        )
+        raise KnowledgeDocumentValidationError(f"{field_name} must not exceed {maximum} characters")
 
 
 @dataclass(frozen=True, slots=True)
@@ -118,9 +116,7 @@ class KnowledgeDocument:
                 "only processing documents can hold a processing lease"
             )
         if self.status is DocumentStatus.EXTRACTED and self.extracted_at is None:
-            raise KnowledgeDocumentValidationError(
-                "extracted documents require extracted_at"
-            )
+            raise KnowledgeDocumentValidationError("extracted documents require extracted_at")
         if self.status is not DocumentStatus.EXTRACTED and self.extracted_at is not None:
             raise KnowledgeDocumentValidationError(
                 "extracted_at is only allowed for extracted documents"
@@ -158,9 +154,7 @@ class KnowledgeDocument:
     ) -> "KnowledgeDocument":
         """Claim a pending document for one extraction attempt."""
         if self.status is not DocumentStatus.PENDING_INGESTION:
-            raise KnowledgeDocumentValidationError(
-                "only pending documents can start processing"
-            )
+            raise KnowledgeDocumentValidationError("only pending documents can start processing")
         return replace(
             self,
             status=DocumentStatus.PROCESSING,
@@ -187,9 +181,7 @@ class KnowledgeDocument:
     def mark_extracted(self, extracted_at: datetime) -> "KnowledgeDocument":
         """Complete extraction after all normalized segments are ready."""
         if self.status is not DocumentStatus.PROCESSING:
-            raise KnowledgeDocumentValidationError(
-                "only processing documents can become extracted"
-            )
+            raise KnowledgeDocumentValidationError("only processing documents can become extracted")
         return replace(
             self,
             status=DocumentStatus.EXTRACTED,

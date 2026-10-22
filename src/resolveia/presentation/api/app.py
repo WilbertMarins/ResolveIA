@@ -39,9 +39,7 @@ def create_app(
         if repository is not None:
             api.state.readiness_checks = {
                 "database": (
-                    readiness_check
-                    if readiness_check is not None
-                    else StaticReadinessCheck(True)
+                    readiness_check if readiness_check is not None else StaticReadinessCheck(True)
                 ),
                 "object_storage": (
                     object_storage_readiness_check
@@ -53,9 +51,7 @@ def create_app(
             return
 
         resolved_settings = settings if settings is not None else get_settings()
-        engine, session_factory = create_database(
-            resolved_settings.database_url.get_secret_value()
-        )
+        engine, session_factory = create_database(resolved_settings.database_url.get_secret_value())
         s3_client = create_s3_client(resolved_settings)
         api.state.session_factory = session_factory
         api.state.object_storage = (

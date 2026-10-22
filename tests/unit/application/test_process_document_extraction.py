@@ -157,10 +157,14 @@ def test_extracts_and_persists_segments_atomically() -> None:
 
 
 def test_skips_duplicate_message_without_reading_storage() -> None:
-    document = pending_document().start_processing(
-        NOW,
-        NOW + timedelta(minutes=5),
-    ).mark_extracted(NOW + timedelta(seconds=1))
+    document = (
+        pending_document()
+        .start_processing(
+            NOW,
+            NOW + timedelta(minutes=5),
+        )
+        .mark_extracted(NOW + timedelta(seconds=1))
+    )
     repository = InMemoryExtractionRepository(document)
     storage = StubStorage()
 
