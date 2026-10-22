@@ -17,29 +17,56 @@ ResolveIA é uma plataforma multiagente de suporte técnico para uma API fictíc
 
 1. Analisar o contexto e registrar dúvidas.
 2. Criar ou atualizar a spec local.
-3. Aguardar aprovação explícita da spec.
-4. Implementar somente o escopo aprovado.
-5. Informar os comandos de verificação, sem executá-los.
-6. Aguardar o responsável executar as verificações e comunicar os resultados.
-7. Corrigir falhas relatadas e repetir a validação manual quando necessário.
-8. Criar ou atualizar o material de estudo local em `study/`.
-9. Disponibilizar o material para estudo independente do responsável, sem bloquear o fluxo.
-10. Criar commits pequenos e coesos após a confirmação das verificações.
+3. Dividir a spec em tarefas didáticas pequenas e ordenadas antes da aprovação.
+4. Aguardar aprovação explícita da spec e de seu plano de tarefas.
+5. Para cada tarefa, informar objetivo, conceito estudado, arquivos previstos,
+   resultado observável e comandos de verificação.
+6. Implementar somente uma tarefa aprovada por vez.
+7. Informar os comandos de verificação, sem executá-los.
+8. Aguardar o responsável executar as verificações e comunicar os resultados.
+9. Corrigir falhas relatadas e repetir a validação manual quando necessário.
+10. Apresentar uma revisão didática da tarefa e a ordem sugerida de leitura do diff.
+11. Criar um commit pequeno e coeso após a confirmação das verificações.
+12. Aguardar a revisão do commit e autorização para iniciar a tarefa seguinte.
+13. Criar ou atualizar o material de estudo local em `study/`.
+14. Disponibilizar o material para estudo independente do responsável, sem bloquear
+    o encerramento da spec.
 
 Não execute testes, lint, formatação ou checagem de tipos. O responsável do projeto executará essas verificações manualmente para controlar o consumo de tokens.
 
 ## Commits
 
-- Uma spec pode gerar múltiplos commits quando isso facilitar a revisão humana.
-- Cada commit deve representar uma unidade coesa e manter a spec rastreável.
-- Busque até 700 linhas adicionadas e removidas por commit e nunca ultrapasse 1.000
+- Uma spec deve ser dividida em tarefas identificadas como `SPEC-NNN/TNN`.
+- Cada tarefa deve produzir preferencialmente um único commit revisável.
+- Cada commit deve representar uma unidade coesa, manter a spec e a tarefa
+  rastreáveis e incluir os testes diretamente relacionados quando couberem.
+- Busque até 300 linhas adicionadas e removidas por commit e nunca ultrapasse 500
   linhas sem aprovação explícita do responsável.
+- Se uma tarefa exceder o limite, divida-a antes da implementação; não fragmente um
+  comportamento apenas depois que todo o código já estiver pronto.
 - Use Conventional Commits em inglês.
-- Inclua o identificador da spec no final da primeira linha de todos os commits da
-  implementação.
+- Inclua o identificador da spec e da tarefa no final da primeira linha de todos os
+  commits da implementação.
 - Não crie o commit antes da aprovação da spec e da confirmação das verificações.
 - Não inclua specs preenchidas, material de estudo ou o arquivo `resolveia-referencia.md` no commit.
-- Exemplo: `feat(tickets): create ticket endpoint [SPEC-001]`.
+- Exemplo: `feat(tickets): create ticket endpoint [SPEC-001/T02]`.
+
+## Tarefas didáticas
+
+- Cada tarefa deve explicar uma ideia principal; evite misturar domínio,
+  persistência, mensageria e API quando puderem ser estudados separadamente.
+- O plano de tarefas deve existir na spec antes da implementação e relacionar cada
+  tarefa aos requisitos e critérios de aceite atendidos.
+- Cada tarefa deve declarar dependências, arquivos previstos, teste ou verificação
+  focada e mensagem de commit proposta.
+- Antes do commit, apresente o diff em uma ordem de leitura que ajude a compreender
+  a decisão, o contrato, a implementação e os testes.
+- Depois do commit, informe hash, quantidade de linhas alteradas, conceitos para
+  revisar e o que a próxima tarefa acrescentará.
+- Não inicie automaticamente a tarefa seguinte. O responsável precisa confirmar
+  que revisou o commit ou autorizar explicitamente a continuação.
+- Uma correção pequena encontrada na revisão pertence à mesma tarefa. Mudanças de
+  escopo voltam para a spec e exigem aprovação.
 
 ## Idioma
 

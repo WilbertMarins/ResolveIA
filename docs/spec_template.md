@@ -95,6 +95,24 @@ Dado um contexto, quando uma ação ocorrer, então um resultado observável dev
 
 O agente não executa testes ou ferramentas de qualidade. O responsável comunica os resultados antes do commit.
 
+## Plano de tarefas didáticas
+
+Cada tarefa deve explicar uma ideia principal, produzir um resultado revisável e
+caber preferencialmente em até 300 linhas alteradas, sem ultrapassar 500 sem
+aprovação explícita.
+
+| Tarefa | Objetivo e conceito | Requisitos/aceite | Dependências | Arquivos previstos | Verificação focada | Commit proposto |
+| --- | --- | --- | --- | --- | --- | --- |
+| `SPEC-NNN/T01` | Resultado pequeno e conhecimento principal | `RF-001`, `CA-001` | Nenhuma | Caminhos esperados | Comando ou inspeção manual | `type(scope): description [SPEC-NNN/T01]` |
+
+Regras de execução:
+
+- implementar uma tarefa por vez;
+- incluir comportamento e testes relacionados na mesma tarefa quando possível;
+- apresentar revisão didática e ordem de leitura do diff;
+- criar o commit após a confirmação das verificações;
+- aguardar a revisão do commit antes de iniciar a tarefa seguinte.
+
 ## Telemetria
 
 - Logs, métricas, traces e eventos esperados.
@@ -131,12 +149,13 @@ O texto deve estar em português e os exemplos de código em inglês.
 ## Definition of Done
 
 - Todos os critérios de aceite foram confirmados pelo responsável.
+- Todas as tarefas foram verificadas e revisadas individualmente.
 - Testes, documentação e material de estudo foram produzidos.
 - O material foi disponibilizado sem bloquear o fluxo de entrega.
-- O commit único contém `[SPEC-NNN]`.
+- Cada commit contém `[SPEC-NNN/TNN]` e respeita o limite de tamanho.
 
-## Mensagem de commit proposta
+## Mensagens de commit propostas
 
 ```text
-type(scope): concise description [SPEC-NNN]
+type(scope): concise task description [SPEC-NNN/T01]
 ```
